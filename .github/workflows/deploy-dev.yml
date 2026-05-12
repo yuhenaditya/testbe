@@ -1,0 +1,27 @@
+name: Deploy Backend Dev
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy source to deployment repo
+        run: |
+          rsync -av --delete ./ /opt/cci/repos/backend/
+
+      - name: Deploy backend
+        run: |
+          cd /opt/cci/compose
+          docker compose -f docker-compose.dev.yml build backend-dev
+          docker compose -f docker-compose.dev.yml up -d backend-dev
+
+      - name: Cleanup docker
+        run: docker system prune -f
