@@ -7,15 +7,22 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, dev, backend]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy source to deployment repo
+      - name: Sync backend source
         run: |
-          rsync -av --delete ./ /opt/cci/repos/backend/
+          sudo rm -rf /opt/cci/apps/dev/backend
+          sudo mkdir -p /opt/cci/apps/dev/backend
+          sudo rsync -av --delete \
+            --exclude ".git" \
+            --exclude "node_modules" \
+            --exclude "dist" \
+            ./ /opt/cci/apps/dev/backend/
+          sudo chown -R devops:devops /opt/cci/apps/dev/backend
 
       - name: Deploy backend
         run: |
@@ -24,4 +31,5 @@ jobs:
           docker compose -f docker-compose.dev.yml up -d backend-dev
 
       - name: Cleanup docker
-        run: docker system prune -f
+        run: |
+          docker image prune -f
